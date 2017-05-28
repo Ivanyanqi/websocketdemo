@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title></title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+     <input type="text" id="sendMsg">
+     <button id="btn">发送</button>
+     <br>
+     <textarea id="text" cols="10",rows="10">
+
+     </textarea>
+
+    </body>
+    <script type="text/javascript">
+        // 页面加载完成执行
+        window.onload = function(){
+             // 初始化webSocket连接
+             var ws = new WebSocket("ws://localhost:8080/ws/test");
+             /*
+                readyState : 
+                    只读属性 readyState 表示连接状态，可以是以下值：
+                        0 - 表示连接尚未建立。
+                        1 - 表示连接已建立，可以进行通信。
+                        2 - 表示连接正在进行关闭。
+                        3 - 表示连接已经关闭或者连接不能打开
+             */
+             console.log(ws.readyState);
+                
+             // bufferedAmount 属性 : 读属性 bufferedAmount 已被 send() 放入正在队列中等待传输，但是还没有发出的 UTF-8 文本字节数
+
+             //连接建立时触发   
+             ws.onopen = function(){
+                 console.log("连接上。。。。");
+                 console.log(ws.readyState);
+
+             }
+
+            // 连接关闭时触发
+             ws.onclose = function(){
+                 console.log("连接关闭");
+                 console.log(ws.readyState);
+             }
+
+            // 通讯出错时，触发
+             ws.onerror = function(){
+                console.log("通讯出错");
+                console.log(ws.readyState);
+                ws.close();  // 关闭连接
+                console.log(ws.readyState);
+             }     
+
+             // 接收到服务端返回的信息是触发   
+             ws.onmessage = function(evt){
+                 console.log(ws.readyState);
+                 var html = document.getElementById("text").innerHTML;
+                 html += evt.data;
+                 document.getElementById("text").innerHTML = html;
+             } 
+
+             document.getElementById("btn").onclick = function(){
+                 //向服务器发送消息的方法
+                ws.send(document.getElementById("sendMsg").value);
+             }   
+
+        }
+    
+    </script>
+
+</html>

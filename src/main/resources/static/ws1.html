@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="http://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.css" rel="stylesheet">
+</head>
+<body>
+
+    <button id="button" class="btn btn-info"> 发送 </button>
+    <button id="button2" class="btn btn-warning"> 断开连接 </button>
+
+
+</body>
+<script src="http://cdn.bootcss.com/sockjs-client/1.1.4/sockjs.js"></script>
+<script src="stomp.js"></script>
+<script src="http://cdn.bootcss.com/jquery/2.1.2/jquery.js"></script>
+
+
+<script type="text/javascript">
+    /**
+     *
+     *   简而言之，WebSocket 是底层协议，SockJS 是WebSocket 的备选方案，也是 底层协议，
+     *   而 STOMP 是基于 WebSocket（SockJS） 的上层协议
+     *   SockJS  :
+     *
+     *          SockJS 是一个浏览器上运行的 JavaScript 库，如果浏览器不支持 WebSocket，
+     *          该库可以模拟对 WebSocket 的支持，实现浏览器和 Web 服务器之间低延迟、全双工、跨域的通讯通道
+     *
+     *   Stomp :
+     *          Simple Text Oriented Message Protocol——面向消息的简单文本协议
+     *          Stomp 提供了客户端和代理之间进行广泛消息传输的框架。Stomp 是一个非常简单而且易用的通讯协议实现，尽管代理端的编写可能非常复杂，
+     *          但是编写一个 Stomp 客户端却是很简单的事情，另外你可以使用 Telnet 来与你的 Stomp 代理进行交互
+     *   如何理解 STOMP 与 WebSocket 的关系 ：
+     *            1.1）假设 HTTP 协议 并不存在，只能使用 TCP 套接字来 编写 web 应用，你可能认为这是一件疯狂的 事情；
+     *            1.2）不过 幸好，我们有 HTTP协议，它解决了 web 浏览器发起请求以及 web 服务器响应请求的细节；
+     *            1.3）直接使用 WebSocket（SockJS） 就很类似于 使用 TCP 套接字来编写 web 应用；因为没有高层协议，
+     *               因此就需要我们定义应用间所发送消息的语义，还需要确保 连接的两端都能遵循这些语义；
+     *            1.4）同 HTTP 在 TCP 套接字上添加 请求-响应 模型层一样，STOMP 在 WebSocket 之上提供了一个基于 帧的线路格式层，
+     *               用来定义消息语义；（STOMP 在 WebSocket 之上提供了一个基于 帧的线路格式层，用来定义消息语义）
+     *   STOMP 帧 ：
+     *         该帧由命令，一个或多个 头信息 以及 负载所组成。如下就是发送 数据的一个 STOMP帧：（引入了 STOMP帧格式）
+     *          SEND
+                destination:/app/marco
+                content-length:20
+
+                {\"message\":\"Marco!\"}
+
+
+            A1）SEND：STOMP命令，表明会发送一些内容；
+            A2）destination：头信息，用来表示消息发送到哪里；
+            A3）content-length：头信息，用来表示 负载内容的 大小；
+            A4）空行：
+            A5）帧内容（负载）内容
+     *      STOMP帧 信息 最有意思的是 destination头信息了： 它表明 STOMP 是一个消息协议，类似于 JMS 或 AMQP。
+     *      消息会发送到 某个 目的地，这个 目的地实际上可能真的 有消息代理作为 支撑。另一方面，消息处理器 也可以监听这些目的地，
+     *      接收所发送过来的消息
+     *
+     * /
+
+
+
+    /**
+     *   （1）连接SockJS的endpoint是“http://localhost:8080/ws/stomp”， -- webSocket 处理的是ws:// 协议
+     *       与后台代码中注册的endpoint要一样。
+
+         （2）创建STOMP协议的webSocket客户端。
+
+         （3）连接webSocket的服务端。
+
+         （4）通过stompClient.subscribe（）订阅服务器的目标是'/topic/getResponse'发送过来的地址，与@SendTo中的地址对应。
+
+        （5）通过stompClient.send（）向地址为"/welcome"的服务器地址发起请求，与@MessageMapping里的地址对应。
+
+                stomp client 连接地址 和 发送地址不一样的
+
+     */
+     $(function () {
+         // 初始化sockjs
+         var socket = new SockJS("http://localhost:8080/stomp");  // 连接地址
+         var stompClient = Stomp.over(socket);
+         stompClient.connect({},function () {  // frame 形参    connected :CONNECTED heart-beat:0,0 version:1.1
+             //console.log("connected :" + frame);
+             stompClient.subscribe("//topic/getResponse",function (data) {
+                 console.log(data);
+                 console.log(data.body);
+             })
+         });
+         /*
+           第一个参数：json 负载消息发送的 目的地； 第二个参数：是一个头信息的Map，它会包含在 STOMP 帧中；第三个参数：负载消息
+          */
+         $("#button").click(function () {
+             stompClient.send("/ws/welcome",{},'hello');  // 发送地址
+         });
+
+         $("#button2").click(function () {
+             if(stompClient){
+                 stompClient.disconnect();
+                 console.log("断开连接...");
+             }
+         });
+
+     });
+</script>
+
+
+
+</html>
